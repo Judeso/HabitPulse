@@ -12,7 +12,8 @@
 <meta property="og:description" content="Suivi d'habitudes, quiz santé, points et classement amis.">
 <meta property="og:type" content="website">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230c0e13'/%3E%3Ctext x='32' y='46' font-size='40' text-anchor='middle'%3E🌱%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%230c0e13'/%3E%3Ctext x='96' y='130' font-size='110' text-anchor='middle'%3E🌱%3C/text%3E%3C/svg%3E">
 <title>HabitPulse</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;0,900;1,300&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -718,6 +719,10 @@ function doy(){const n=new Date();return Math.floor((n-(new Date(n.getFullYear()
 //  SERVICE WORKER & PWA
 // ═══════════════════════════════════════════════════════════
 let deferredPrompt=null;
+// Global error handler — affiche une alerte lisible si bug JS
+window.addEventListener('error', function(e){
+  console.error('[HP] Erreur JS:', e.message, 'ligne', e.lineno);
+});
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
     navigator.serviceWorker.register('sw.js').then(reg=>{
@@ -911,15 +916,22 @@ function chkOb(){
   document.getElementById('startBtn').disabled=!(n&&u&&selH.length===3);
 }
 function startApp(){
-  const n=document.getElementById('obName').value.trim();
-  const u=document.getElementById('obUser').value.trim();
-  if(!n||!u||selH.length!==3)return;
-  S.name=n;S.username=u;S.userId=genId();
-  S.habits=selH.map(id=>{const h=HO.find(o=>o.id===id);return{id:h.id,e:h.e,n:h.n};});
-  S.logs={};S.points=0;S.weekPoints=0;S.weekStart=monStr();S.friends=[];S.confettiDone=[];
-  save();pub();
-  document.getElementById('onboarding').style.display='none';
-  initApp();
+  try{
+    const n=document.getElementById('obName').value.trim();
+    const u=document.getElementById('obUser').value.trim();
+    if(!n||!u||selH.length!==3){console.warn('[HP] startApp: champs incomplets',{n,u,selH});return;}
+    S.name=n;S.username=u;S.userId=genId();
+    S.habits=selH.map(function(id){var h=HO.find(function(o){return o.id===id;});return{id:h.id,e:h.e,n:h.n};});
+    S.logs={};S.points=0;S.weekPoints=0;S.weekStart=monStr();S.friends=[];S.confettiDone=[];
+    save();
+    try{pub();}catch(e){console.warn('[HP] pub() failed:',e);}
+    document.getElementById('onboarding').style.display='none';
+    document.getElementById('app').style.display='block';
+    initApp();
+  }catch(err){
+    console.error('[HP] startApp error:',err);
+    alert('Erreur lors du démarrage : '+err.message+'\nVérifie la console pour plus de détails.');
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -927,7 +939,9 @@ function startApp(){
 // ═══════════════════════════════════════════════════════════
 function initApp(){
   weekReset();
-  document.getElementById('greetTxt').textContent=`Bonjour, ${S.name} !`;
+  document.getElementById('app').style.display='block';
+  document.getElementById('onboarding').style.display='none';
+  document.getElementById('greetTxt').textContent='Bonjour, '+S.name+' !';
   updateHeader();
   renderToday();renderQuiz();renderFriends();renderStats();
   updateRewardedCard();
