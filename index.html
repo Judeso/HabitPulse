@@ -912,13 +912,36 @@ function watchAd(){
 //  ONBOARDING
 // ═══════════════════════════════════════════════════════════
 let selH=[];
-document.addEventListener('DOMContentLoaded',()=>{
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('[HP] DOM ready');
   load();
-  document.getElementById('obName').addEventListener('input',chkOb);
-  document.getElementById('obUser').addEventListener('input',chkOb);
-  if(S.name){document.getElementById('onboarding').classList.add('hidden');initApp();}
-  else{
-    document.getElementById('hgrid').innerHTML=HO.map(h=>`<div class="hop" id="h_${h.id}" onclick="togH('${h.id}')">${h.e} ${h.n}</div>`).join('');
+  console.log('[HP] State loaded — name:', S.name, 'habits:', S.habits.length);
+
+  document.getElementById('obName').addEventListener('input', chkOb);
+  document.getElementById('obUser').addEventListener('input', chkOb);
+
+  // Session valide = nom + au moins 1 habitude
+  var sessionOK = S.name && S.habits && S.habits.length > 0;
+  console.log('[HP] Session valide:', sessionOK);
+
+  if(sessionOK){
+    document.getElementById('onboarding').classList.add('hidden');
+    document.getElementById('app').classList.add('visible');
+    initApp();
+  } else {
+    // Reset au cas où données corrompues
+    if(S.name && (!S.habits || S.habits.length === 0)){
+      console.warn('[HP] Session corrompue (nom sans habits), reset');
+      S.name = ''; S.habits = []; save();
+    }
+    // Afficher la grille d'habitudes
+    var grid = document.getElementById('hgrid');
+    if(grid) {
+      grid.innerHTML = HO.map(function(h){
+        return '<div class="hop" id="h_'+h.id+'" onclick="togH(\''+h.id+'\')" style="cursor:pointer">'+h.e+' '+h.n+'</div>';
+      }).join('');
+      console.log('[HP] Grille habitudes rendue:', grid.children.length, 'items');
+    }
   }
 });
 function togH(id){
@@ -928,26 +951,38 @@ function togH(id){
   chkOb();
 }
 function chkOb(){
-  const n=document.getElementById('obName').value.trim();
-  const u=document.getElementById('obUser').value.trim();
-  document.getElementById('startBtn').disabled=!(n&&u&&selH.length===3);
+  var n=document.getElementById('obName').value.trim();
+  var u=document.getElementById('obUser').value.trim();
+  var ok=!!(n&&u&&selH.length===3);
+  console.log('[HP] chkOb — nom:',!!n,' pseudo:',!!u,' habits:',selH.length,' btn:',ok);
+  document.getElementById('startBtn').disabled=!ok;
 }
 function startApp(){
+  console.log('[HP] startApp() appelé — selH:',selH);
   try{
-    const n=document.getElementById('obName').value.trim();
-    const u=document.getElementById('obUser').value.trim();
-    if(!n||!u||selH.length!==3){console.warn('[HP] startApp: champs incomplets',{n,u,selH});return;}
+    var n=document.getElementById('obName').value.trim();
+    var u=document.getElementById('obUser').value.trim();
+    console.log('[HP] n=',n,' u=',u,' selH=',selH.length);
+    if(!n||!u||selH.length!==3){console.warn('[HP] incomplet');return;}
     S.name=n;S.username=u;S.userId=genId();
     S.habits=selH.map(function(id){var h=HO.find(function(o){return o.id===id;});return{id:h.id,e:h.e,n:h.n};});
     S.logs={};S.points=0;S.weekPoints=0;S.weekStart=monStr();S.friends=[];S.confettiDone=[];
+    S.settings=Object.assign({},DEFAULT_SETTINGS);
+    console.log('[HP] S.habits=',S.habits);
     save();
-    try{pub();}catch(e){console.warn('[HP] pub() failed:',e);}
-    document.getElementById('onboarding').classList.add('hidden');
-    document.getElementById('app').classList.add('visible');
+    console.log('[HP] Saved. Affichage...');
+    var ob=document.getElementById('onboarding');
+    var ap=document.getElementById('app');
+    ob.classList.add('hidden');
+    ap.classList.add('visible');
+    console.log('[HP] onboarding hidden:',ob.classList.contains('hidden'));
+    console.log('[HP] app visible:',ap.classList.contains('visible'));
+    console.log('[HP] app computed display:',window.getComputedStyle(ap).display);
     initApp();
+    console.log('[HP] ✅ startApp done');
   }catch(err){
-    console.error('[HP] startApp error:',err);
-    alert('Erreur lors du démarrage : '+err.message+'\nVérifie la console pour plus de détails.');
+    console.error('[HP] startApp CRASH:',err.message,err.stack);
+    alert('Erreur: '+err.message);
   }
 }
 
