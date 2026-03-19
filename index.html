@@ -65,6 +65,8 @@ input[type=text]:focus,input[type=time]:focus{border-color:var(--accent);}
 
 /* ══ APP ═════════════════════════════════════════════════ */
 #app{display:none;min-height:100vh;position:relative;z-index:1;padding-bottom:calc(88px + var(--safe-bot));}
+#app.visible{display:block !important;}
+#onboarding.hidden{display:none !important;}
 .app-header{display:flex;align-items:center;justify-content:space-between;padding:calc(1.2rem + var(--safe-top)) 1.4rem .4rem;position:sticky;top:0;z-index:20;background:linear-gradient(to bottom,var(--bg) 75%,transparent);}
 .logo-sm{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
 .greet{font-size:.78rem;color:var(--muted);margin-top:.1rem;}
@@ -914,7 +916,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   load();
   document.getElementById('obName').addEventListener('input',chkOb);
   document.getElementById('obUser').addEventListener('input',chkOb);
-  if(S.name){document.getElementById('onboarding').style.display='none';initApp();}
+  if(S.name){document.getElementById('onboarding').classList.add('hidden');initApp();}
   else{
     document.getElementById('hgrid').innerHTML=HO.map(h=>`<div class="hop" id="h_${h.id}" onclick="togH('${h.id}')">${h.e} ${h.n}</div>`).join('');
   }
@@ -940,8 +942,8 @@ function startApp(){
     S.logs={};S.points=0;S.weekPoints=0;S.weekStart=monStr();S.friends=[];S.confettiDone=[];
     save();
     try{pub();}catch(e){console.warn('[HP] pub() failed:',e);}
-    document.getElementById('onboarding').style.display='none';
-    document.getElementById('app').style.display='block';
+    document.getElementById('onboarding').classList.add('hidden');
+    document.getElementById('app').classList.add('visible');
     initApp();
   }catch(err){
     console.error('[HP] startApp error:',err);
@@ -955,8 +957,8 @@ function startApp(){
 function initApp(){
   try{
     weekReset();
-    document.getElementById('app').style.display='block';
-    document.getElementById('onboarding').style.display='none';
+    document.getElementById('app').classList.add('visible');
+    document.getElementById('onboarding').classList.add('hidden');
     document.getElementById('greetTxt').textContent='Bonjour, '+S.name+' !';
   }catch(e){console.error('[HP] initApp header error:',e);}
   try{updateHeader();}catch(e){console.error('[HP] updateHeader error:',e);}
